@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtual env
+env/
+venv/
+ENV/
+.venv/
+
+# Django stuff
+*.mo
+*.pot
+*.log
+*.pid
+*.pid.lock
+staticfiles/
+media/
+local_settings.py
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python egg
+*.egg
+*.egg-info/
+dist/
+build/
+
+# dotenv
+.env
+*.env
+
+# migrations (opcional — normalmente NÃO se ignora!)
+# Se quiser ignorar, descomente:
+# */migrations/
+# !*/migrations/__init__.py
