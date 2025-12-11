@@ -13,10 +13,20 @@ class ListRoom(admin.ModelAdmin):
 admin.site.register(Room, ListRoom)
 
 class ListGuest(admin.ModelAdmin):
-    list_display = ("id", "name", "address", "cpf", "rg", "birth_date")
+    list_display = ("id", "name", "cpf", "rg", "birth_date", "phone")
     list_display_links = ("id", "name")
     search_fields = ("name",)
-    list_editable = ("birth_date",)
+    list_editable = ("birth_date", "phone")
     list_per_page = 10
 
 admin.site.register(Guest, ListGuest)
+
+class ListBooking(admin.ModelAdmin):
+    list_display = ("id", "room", "check_in", "check_out", "status")
+    list_display_links = ("id", "room")
+    search_fields = ("room", "guest")
+    list_editable = ("status",)
+    filter_horizontal = ("guest",)
+    list_per_page = 10
+
+admin.site.register(Booking, ListBooking)

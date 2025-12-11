@@ -17,10 +17,10 @@ class Room(models.Model):
 
 class Guest(models.Model):
     name = models.CharField(max_length=100)
-    address = models.CharField(max_length=255)
     cpf = models.CharField(max_length=20, unique=True)
     rg = models.CharField(max_length=20, unique=True)
     birth_date = models.DateField(null=False, blank=False)
+    phone = models.CharField(max_length=14, unique=True)
 
     def __str__(self):
         return self.name
@@ -34,8 +34,7 @@ class Booking(models.Model):
     ]
 
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="bookings")
-    guest = models.ForeignKey(Guest, on_delete=models.CASCADE, related_name="bookings")
-
+    guest = models.ManyToManyField(Guest, related_name="bookings")
     check_in = models.DateTimeField()
     check_out = models.DateTimeField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')

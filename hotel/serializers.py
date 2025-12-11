@@ -12,6 +12,9 @@ class GuestSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BookingSerializer(serializers.ModelSerializer):
+    room = RoomSerializer(read_only=True)
+    guest = GuestSerializer(read_only=True, many=True)
+
     class Meta:
         model = Booking
         fields = '__all__'
