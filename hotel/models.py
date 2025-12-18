@@ -7,6 +7,7 @@ class Room(models.Model):
     name = models.CharField(max_length=100)
     guest_capacity = models.IntegerField()
     air_conditioning = models.BooleanField(default=False)
+    fan = models.BooleanField(default=False)
     double_beds = models.IntegerField(default=0)
     single_beds = models.IntegerField(default=0)
     crib = models.BooleanField(default=False)

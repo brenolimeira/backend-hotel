@@ -4,12 +4,38 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db.models import Count, Q, BooleanField, Case, When, Value
 from .models import Room, Guest, Booking
-from .serializers import RoomSerializer, GuestSerializer, BookingSerializer
+from .serializers import RoomListSerializer, RoomCreateSerializer, GuestSerializer, BookingSerializer
 
 class RoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.all()
-    serializer_class = RoomSerializer
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return RoomListSerializer
+        return RoomCreateSerializer
+
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return (
+                Room.objects
+                .annotate(
+                    current_guests=Count(
+                        'bookings__guest',
+                        filter=Q(bookings__status='active'),
+                        distinct=True
+                    )
+                )
+                .annotate(
+                    occupied=Case(
+                        When(current_guests__gt=0, then=Value(True)),
+                        default=Value(False),
+                        output_field=BooleanField()
+                    )
+                )
+            )
+        return Room.objects.all()
 
 class GuestViewSet(viewsets.ModelViewSet):
     queryset = Guest.objects.all()
