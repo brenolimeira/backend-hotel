@@ -4,6 +4,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.db.models import Count, Q, BooleanField, Case, When, Value
 from .models import Room, Guest, Booking
 from .serializers import RoomListSerializer, RoomCreateSerializer, GuestSerializer, BookingSerializer
@@ -36,10 +37,28 @@ class RoomViewSet(viewsets.ModelViewSet):
                 )
             )
         return Room.objects.all()
+    
+    def destroy(self, request, *args, **kwargs):
+        room = self.get_object()
+
+        # impede excluir quarto com reservas ativas
+        if room.bookings.filter(status='active').exists():
+            raise ValidationError("Este quarto possui hospedagens ativas e não pode ser excluído.")
+
+        return super().destroy(request, *args, **kwargs)
 
 class GuestViewSet(viewsets.ModelViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        guest = self.get_object()
+
+        # verifica se existe booking ativa
+        if guest.bookings.filter(status='active').exists():
+            raise ValidationError("Este hóspede possui hospedagens ativas e não pode ser excluído.")
+
+        return super().destroy(request, *args, **kwargs)
 
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()

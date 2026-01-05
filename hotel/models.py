@@ -34,7 +34,7 @@ class Booking(models.Model):
         ('canceled', 'Canceled'),
     ]
 
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="bookings")
+    room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="bookings")
     guest = models.ManyToManyField(Guest, related_name="bookings")
     check_in = models.DateTimeField()
     check_out = models.DateTimeField(blank=True, null=True)
