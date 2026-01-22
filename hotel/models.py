@@ -2,6 +2,7 @@ from django.db import models
 
 # Create your models here.
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class Room(models.Model):
     name = models.CharField(max_length=100)
@@ -36,8 +37,13 @@ class Booking(models.Model):
 
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="bookings")
     guest = models.ManyToManyField(Guest, related_name="bookings")
-    check_in = models.DateTimeField()
-    check_out = models.DateTimeField(blank=True, null=True)
+
+    reservation_start = models.DateTimeField()
+    reservation_end = models.DateTimeField()
+
+    check_in = models.DateTimeField(null=True, blank=True)
+    check_out = models.DateTimeField(null=True, blank=True)
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     def __str__(self):

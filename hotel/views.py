@@ -1,11 +1,12 @@
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.db.models import Count, Q, BooleanField, Case, When, Value
+from django.utils import timezone
 from .models import Room, Guest, Booking
 from .serializers import RoomListSerializer, RoomCreateSerializer, GuestSerializer, BookingSerializer
 
@@ -69,3 +70,36 @@ class BookingViewSet(viewsets.ModelViewSet):
         bookings = Booking.objects.filter(room_id=room_id)
         serializer = BookingSerializer(bookings, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["get"], url_path="blocked-dates/(?P<room_id>[^/.]+)")
+    def blocked_dates(self, request, room_id=None):
+        bookings = Booking.objects.filter(
+            room_id=room_id,
+            status='active'
+        ).values('reservation_start', 'reservation_end')
+
+        return Response(bookings)
+    
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        booking = self.get_object()
+
+        if booking.status == 'canceled':
+            return Response(
+                {"detail": "Reserva já está cancelada."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if booking.status == 'completed':
+            return Response(
+                {"detail": "Reserva já foi finalizada."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        booking.status = 'canceled'
+        booking.save()
+
+        return Response(
+            {"detail": "Reserva cancelada com sucesso."},
+            status=status.HTTP_200_OK
+        )
