@@ -1,12 +1,11 @@
 from django.shortcuts import render
-
-# Create your views here.
+from django.utils import timezone
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from django.db.models import Count, Q, BooleanField, Case, When, Value
-from django.utils import timezone
 from .models import Room, Guest, Booking
 from .serializers import RoomListSerializer, RoomCreateSerializer, GuestSerializer, BookingSerializer
 
@@ -51,6 +50,8 @@ class RoomViewSet(viewsets.ModelViewSet):
 class GuestViewSet(viewsets.ModelViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
 
     def destroy(self, request, *args, **kwargs):
         guest = self.get_object()
@@ -62,44 +63,75 @@ class GuestViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 class BookingViewSet(viewsets.ModelViewSet):
-    queryset = Booking.objects.all()
-    serializer_class = BookingSerializer
+        queryset = Booking.objects.all()
+        serializer_class = BookingSerializer
 
-    @action(detail=False, methods=['get'], url_path='room/(?P<room_id>[^/.]+)')
-    def by_room(self, request, room_id=None):
-        bookings = Booking.objects.filter(room_id=room_id)
-        serializer = BookingSerializer(bookings, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=["get"], url_path="blocked-dates/(?P<room_id>[^/.]+)")
-    def blocked_dates(self, request, room_id=None):
-        bookings = Booking.objects.filter(
-            room_id=room_id,
-            status='active'
-        ).values('reservation_start', 'reservation_end')
+        def get_queryset(self):
+            qs = super().get_queryset()
+            status_param = self.request.query_params.get("status")
+            room_id = self.request.query_params.get("room")
 
-        return Response(bookings)
-    
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        booking = self.get_object()
+            if status_param:
+                qs = qs.filter(status__iexact=status_param)
 
-        if booking.status == 'canceled':
+            if room_id:
+                qs = qs.filter(room_id=room_id)
+
+            return qs
+
+        @action(detail=False, methods=['get'], url_path='room/(?P<room_id>[^/.]+)')
+        def by_room(self, request, room_id=None):
+            print(self.request.query_params)
+            bookings = self.get_queryset().filter(room_id=room_id)
+            serializer = self.get_serializer(bookings, many=True)
+            return Response(serializer.data)
+        
+        @action(detail=False, methods=["get"], url_path="blocked-dates/(?P<room_id>[^/.]+)")
+        def blocked_dates(self, request, room_id=None):
+            bookings = Booking.objects.filter(
+                room_id=room_id,
+                status='active'
+            ).values('reservation_start', 'reservation_end')
+
+            return Response(bookings)
+        
+        @action(detail=True, methods=['post'])
+        def cancel(self, request, pk=None):
+            booking = self.get_object()
+
+            if booking.status == 'canceled':
+                return Response(
+                    {"detail": "Reserva já está cancelada."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if booking.status == 'completed':
+                return Response(
+                    {"detail": "Reserva já foi finalizada."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            booking.status = 'canceled'
+            booking.save()
+
             return Response(
-                {"detail": "Reserva já está cancelada."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Reserva cancelada com sucesso."},
+                status=status.HTTP_200_OK
             )
+        
+        @action(detail=True, methods=['post'])
+        def checkout(self, request, pk=None):
+            booking = self.get_object()
 
-        if booking.status == 'completed':
-            return Response(
-                {"detail": "Reserva já foi finalizada."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            if booking.status != "active":
+                return Response(
+                    {"error": "Reserva já finalizada"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-        booking.status = 'canceled'
-        booking.save()
+            booking.check_out = timezone.now()
+            booking.status = "completed"
+            booking.save()
 
-        return Response(
-            {"detail": "Reserva cancelada com sucesso."},
-            status=status.HTTP_200_OK
-        )
+            serializer = self.get_serializer(booking)
+            return Response(serializer.data)

@@ -66,6 +66,8 @@ class BookingSerializer(serializers.ModelSerializer):
             'reservation_start',
             'reservation_end',
             'status',
+            'check_in',
+            'check_out'
         ]
 
     def validate(self, data):
