@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 
+import os
+
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +29,7 @@ SECRET_KEY = 'django-insecure-6&ikfb#1*0)&&#r07ld3w1^mwx3l)mpw93$=*-jj35$3q9^e*x
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -53,6 +57,8 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 ]
 
+MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
 ROOT_URLCONF = 'setup.urls'
 
 TEMPLATES = [
@@ -77,9 +83,13 @@ WSGI_APPLICATION = 'setup.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("PGDATABASE"),
+        "USER": os.getenv("PGUSER"),
+        "PASSWORD": os.getenv("PGPASSWORD"),
+        "HOST": os.getenv("PGHOST"),
+        "PORT": os.getenv("PGPORT"),
     }
 }
 
@@ -121,3 +131,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = "/static/"
