@@ -68,11 +68,14 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         def get_queryset(self):
             qs = super().get_queryset()
-            status_param = self.request.query_params.get("status")
-            room_id = self.request.query_params.get("room")
+            params = self.request.query_params
+
+            status_param = params.get("status")
+            room_id = params.get("room")
 
             if status_param:
-                qs = qs.filter(status__iexact=status_param)
+                status_list = [s.strip().lower() for s in status_param.split(",")]
+                qs = qs.filter(status__in=status_list)
 
             if room_id:
                 qs = qs.filter(room_id=room_id)
@@ -90,7 +93,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         def blocked_dates(self, request, room_id=None):
             bookings = Booking.objects.filter(
                 room_id=room_id,
-                status='active'
+                status__in=["active", "reserved"]
             ).values('reservation_start', 'reservation_end')
 
             return Response(bookings)
@@ -99,25 +102,17 @@ class BookingViewSet(viewsets.ModelViewSet):
         def cancel(self, request, pk=None):
             booking = self.get_object()
 
-            if booking.status == 'canceled':
+            if booking.status in ["completed", "canceled"]:
                 return Response(
-                    {"detail": "Reserva já está cancelada."},
+                    {"error": "Reserva não pode ser cancelada"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            if booking.status == 'completed':
-                return Response(
-                    {"detail": "Reserva já foi finalizada."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            booking.status = 'canceled'
+            booking.status = "canceled"
             booking.save()
 
-            return Response(
-                {"detail": "Reserva cancelada com sucesso."},
-                status=status.HTTP_200_OK
-            )
+            serializer = self.get_serializer(booking)
+            return Response(serializer.data)
         
         @action(detail=True, methods=['post'])
         def checkout(self, request, pk=None):
@@ -131,6 +126,23 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             booking.check_out = timezone.now()
             booking.status = "completed"
+            booking.save()
+
+            serializer = self.get_serializer(booking)
+            return Response(serializer.data)
+
+        @action(detail=True, methods=['post'])
+        def checkin(self, request, pk=None):
+            booking = self.get_object()
+
+            if booking.status != "reserved":
+                return Response(
+                    {"error": "Só reservas podem fazer check-in"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            booking.check_in = timezone.now()
+            booking.status = "active"
             booking.save()
 
             serializer = self.get_serializer(booking)

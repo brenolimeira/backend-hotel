@@ -86,7 +86,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
         conflict = Booking.objects.filter(
             room=room,
-            status='active',
+            status__in=['active', 'reserved'],
             reservation_start__lt=end,
             reservation_end__gt=start
         ).exists()

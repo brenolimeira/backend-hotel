@@ -22,7 +22,7 @@ class ListGuest(admin.ModelAdmin):
 admin.site.register(Guest, ListGuest)
 
 class ListBooking(admin.ModelAdmin):
-    list_display = ("id", "room", "check_in", "check_out", "status")
+    list_display = ("id", "room", "check_in", "check_out", "status", "reservation_start", "reservation_end")
     list_display_links = ("id", "room")
     search_fields = ("room", "guest")
     list_editable = ("status",)

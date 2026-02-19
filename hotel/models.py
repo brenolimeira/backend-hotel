@@ -33,6 +33,7 @@ class Booking(models.Model):
         ('active', 'Active'),
         ('completed', 'Completed'),
         ('canceled', 'Canceled'),
+        ('reserved', 'Reserved')
     ]
 
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="bookings")
@@ -44,7 +45,7 @@ class Booking(models.Model):
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='reserved')
 
     def __str__(self):
         return f"Booking {self.id} - {self.room.name}"
