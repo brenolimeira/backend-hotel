@@ -99,17 +99,25 @@ if DATABASE_URL:
         )
     }
 else:
-    # Desenvolvimento local (PostgreSQL)
+    # Desenvolvimento local (SQLite)
     DATABASES = {
         "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("PGDATABASE", "hotel"),
-            "USER": os.getenv("PGUSER", "postgres"),
-            "PASSWORD": os.getenv("PGPASSWORD", "1234"),
-            "HOST": os.getenv("PGHOST", "localhost"),
-            "PORT": os.getenv("PGPORT", "5432"),
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+# else:
+    # Desenvolvimento local (PostgreSQL)
+    # DATABASES = {
+    #     "default": {
+    #         "ENGINE": "django.db.backends.postgresql",
+    #         "NAME": os.getenv("PGDATABASE", "hotel"),
+    #         "USER": os.getenv("PGUSER", "postgres"),
+    #         "PASSWORD": os.getenv("PGPASSWORD", "1234"),
+    #         "HOST": os.getenv("PGHOST", "localhost"),
+    #         "PORT": os.getenv("PGPORT", "5432"),
+    #     }
+    # }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
