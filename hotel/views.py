@@ -8,6 +8,9 @@ from rest_framework.filters import SearchFilter
 from django.db.models import Count, Q, BooleanField, Case, When, Value
 from .models import Room, Guest, Booking
 from .serializers import RoomListSerializer, RoomCreateSerializer, GuestSerializer, BookingSerializer
+from django.contrib.auth.models import User
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
 class RoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.all()
@@ -147,3 +150,54 @@ class BookingViewSet(viewsets.ModelViewSet):
 
             serializer = self.get_serializer(booking)
             return Response(serializer.data)
+
+class AuthViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['post'])
+    def register(self, request):
+        username = request.data.get("username")
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not username or not email or not password:
+            return Response({"error": "Todos os campos são obrigatórios"})
+
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {"error": "Usuário já existe"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password
+        )   
+        user.save()
+
+        
+        return Response({"message": "Usuário registrado"})
+    
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if not username or not password:
+            return Response(
+                {"error": "Nome de usuário e senha são obrigatórios"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = authenticate(username=username, password=password)
+
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh)
+            })
+        
+        return Response({"error": "Credenciais inválidas"}, status=401)
